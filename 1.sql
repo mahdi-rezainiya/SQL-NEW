@@ -139,16 +139,82 @@ ORDER BY first_name;
 ORDER BY amount , customer_id;
 SELECT * FROM customers
 LIMIT 1 ;
-
-
-
-
-
-
-
-
-
-
-
-
-
+SELECT * FROM customers AS a
+INNER JOIN customers As b
+ON a.referral_id = b.customer_id ;
+CREATE VIEW employee_attendance AS
+SELECT first_name , last_name
+FROM employees;
+SELECT * FROM employee_attendance
+GROUP BY last_name DESC ;
+DROP VIEW employee_attendance;
+SHOW INDEXES FROM customers;
+CREATE INDEX last_name_idx
+ON customers(last_name);
+ALTER TABLE customers
+DROP INDEX last_name_idx;
+SELECT first_name , last_name , hourly_pay , 
+    (SELECT AVG(hourly_pay) FROM employees) AS avg_pay
+FROM employees;
+SELECT first_name , last_name , hourly_pay
+FROM employees
+WHERE hourly_pay > (SELECT AVG(hourly_pay) FROM employees);
+SELECT first_name , last_name FROM customers
+WHERE customer_id IN(
+    SELECT DISTINCT customer_id FROM transactions
+    WHERE customer_id IS NOT NULL
+);
+SET SUM(amount) , order_date
+FROM transactions
+GROUP BY order_date;
+SELECT COUNT(amount) , customer_id
+FROM transactions
+GROUP BY customer_id
+HAVING COUNT(amount) > 1;
+SELECT COUNT(amount) , customer_id
+FROM transactions
+GROUP BY customer_id WITH ROLLUP;
+CREATE TABLE transactions(
+    transaction_id PRIMARY KEY,
+    amount DECIMAL(5 , 2),
+    customer_id INT , 
+    order_date DATE ,
+    FOREIGN KEY (customer_id) REFERENCES customers(customer_id)
+    ON DELETE SET NULL    
+);
+ALTER TABLE transactions 
+DROP FOREIGN KEY fk_customer_id;
+ALTER TABLE transactions
+ADD CONSTRAINT fk_customer_id
+FOREIGN KEY (customer_id) REFERENCES customers(customer_id)
+ON DELETE SET NULL ;
+ALTER TABLE transactions 
+ADD CONSTRAINT fk_transaction_id
+FOREIGN KEY (customer_id) REFERENCES customers(customer_id)
+ON DELETE CASCADE;
+DELIMITER $$
+CREATE PROCEDURE get_customers()
+BEGIN 
+SELECT * FROM customers
+END $$
+DELIMITER ;
+CALL get_customers();
+DROP PROCEDURE get_customers;
+DELIMITER $$
+CREATE PROCEDURE find_customer(IN id INT)
+BEGIN 
+SELECT * FROM customers
+WHERE customer_id = id;
+END $$
+DELIMITER ;
+CALL find_customer(1);
+ALTER TABLE employees
+ADD COLUMN salary DECIMAL(10 , 2) AFTER hourly_pay;
+SELECT * FROM employees ;
+UPDATE employees 
+SET salary = hourly_pay * 2080 ;
+CREATE TRIGGER before_hourly_pay_update
+BEFORE UPDATE ON employees
+FOR EACH ROW 
+SET NEW.salary = (NEW.hourly_pay * 1000);
+SHOW TRIGGERS;
